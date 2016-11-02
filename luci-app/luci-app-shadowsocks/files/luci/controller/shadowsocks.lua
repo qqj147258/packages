@@ -16,8 +16,8 @@ function index()
 		cbi("shadowsocks/general"),
 		_("General Settings"), 10).leaf = true
 
-	entry({"admin", "services", "shadowsocks", "servers-manage"},
-		cbi("shadowsocks/servers-manage"),
+	entry({"admin", "services", "shadowsocks", "servers"},
+		arcombine(cbi("shadowsocks/servers"), cbi("shadowsocks/servers-details")),
 		_("Servers Manage"), 20).leaf = true
 
 	if luci.sys.call("command -v ss-redir >/dev/null") ~= 0 then

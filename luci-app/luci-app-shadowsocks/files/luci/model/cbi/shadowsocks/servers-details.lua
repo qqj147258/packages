@@ -3,6 +3,7 @@
 
 local m, s, o
 local shadowsocks = "shadowsocks"
+local sid = arg[1]
 local encrypt_methods = {
 	"table",
 	"rc4",
@@ -30,12 +31,18 @@ local function support_fast_open()
 	return luci.sys.exec("cat /proc/sys/net/ipv4/tcp_fastopen 2>/dev/null"):trim() == "3"
 end
 
-m = Map(shadowsocks, "%s - %s" %{translate("ShadowSocks"), translate("Servers Manage")})
+m = Map(shadowsocks, "%s - %s" %{translate("ShadowSocks"), translate("Edit Server")})
+m.redirect = luci.dispatcher.build_url("admin/services/shadowsocks/servers")
 
--- [[ Servers Manage ]]--
-s = m:section(TypedSection, "servers")
+if m.uci:get(shadowsocks, sid) ~= "servers" then
+	luci.http.redirect(m.redirect)
+	return
+end
+
+-- [[ Edit Server ]]--
+s = m:section(NamedSection, sid, "servers")
 s.anonymous = true
-s.addremove   = true
+s.addremove   = false
 
 o = s:option(Value, "alias", translate("Alias(optional)"))
 o.rmempty = true
