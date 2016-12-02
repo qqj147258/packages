@@ -24,6 +24,3 @@ msgstr ""
 
 msgid "Tunnels"
 msgstr ""
-
-msgid "tunnel"
-msgstr ""

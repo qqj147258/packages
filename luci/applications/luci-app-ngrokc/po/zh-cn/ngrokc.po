@@ -24,6 +24,3 @@ msgstr "认证令牌"
 
 msgid "Tunnels"
 msgstr "隧道"
-
-msgid "tunnel"
-msgstr "隧道"

@@ -11,7 +11,7 @@ PKG_NAME:=luci-app-ngrokc
 
 # Version == major.minor.patch
 # increase "minor" on new functionality and "patch" on patches/optimization
-PKG_VERSION:=1.0.0
+PKG_VERSION:=1.0.1
 
 # Release == build
 # increase on changes of translation files
