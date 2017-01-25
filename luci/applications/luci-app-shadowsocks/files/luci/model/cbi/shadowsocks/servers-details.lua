@@ -1,4 +1,4 @@
--- Copyright (C) 2016 Jian Chang <aa65535@live.com>
+-- Copyright (C) 2016-2017 Jian Chang <aa65535@live.com>
 -- Licensed to the public under the GNU General Public License v3.
 
 local m, s, o
@@ -42,7 +42,7 @@ end
 -- [[ Edit Server ]]--
 s = m:section(NamedSection, sid, "servers")
 s.anonymous = true
-s.addremove   = false
+s.addremove = false
 
 o = s:option(Value, "alias", translate("Alias(optional)"))
 o.rmempty = true
@@ -75,5 +75,11 @@ o.rmempty = false
 o = s:option(ListValue, "encrypt_method", translate("Encrypt Method"))
 for _, v in ipairs(encrypt_methods) do o:value(v, v:upper()) end
 o.rmempty = false
+
+o = s:option(Value, "plugin", translate("Plugin Name"))
+o.placeholder = "eg: obfs-local"
+
+o = s:option(Value, "plugin_opts", translate("Plugin Arguments"))
+o.placeholder = "eg: obfs=http;obfs-host=www.baidu.com"
 
 return m

@@ -1,4 +1,4 @@
--- Copyright (C) 2016 Jian Chang <aa65535@live.com>
+-- Copyright (C) 2014-2017 Jian Chang <aa65535@live.com>
 -- Licensed to the public under the GNU General Public License v3.
 
 local m, s, o
@@ -34,13 +34,15 @@ local function get_status(name)
 end
 
 uci:foreach(shadowsocks, "servers", function(s)
-	servers[#servers+1] = {name = s[".name"], alias = s.alias or "%s:%s" %{s.server, s.server_port}}
+	if s.server and s.server_port then
+		servers[#servers+1] = {name = s[".name"], alias = s.alias or "%s:%s" %{s.server, s.server_port}}
+	end
 end)
 
 m = Map(shadowsocks, "%s - %s" %{translate("ShadowSocks"), translate("General Settings")})
 
 -- [[ Running Status ]]--
-s = m:section(TypedSection, "transparent_proxy", translate("Running Status"))
+s = m:section(TypedSection, "general", translate("Running Status"))
 s.anonymous = true
 
 if has_redir then
@@ -57,6 +59,18 @@ if has_tunnel then
 	o = s:option(DummyValue, "_status", translate("Port Forward"))
 	o.value = get_status("ss-tunnel")
 end
+
+s = m:section(TypedSection, "general", translate("Global Settings"))
+s.anonymous = true
+
+o = s:option(Value, "startup_delay", translate("Startup Delay"))
+o:value(0, translate("Not enabled"))
+for _, v in ipairs({5, 10, 15, 25, 40}) do
+	o:value(v, translate("%u seconds") %{v})
+end
+o.datatype = "uinteger"
+o.default = 0
+o.rmempty = false
 
 -- [[ Transparent Proxy ]]--
 if has_redir then
