@@ -18,6 +18,7 @@ local encrypt_methods = {
 	"camellia-128-cfb",
 	"camellia-192-cfb",
 	"camellia-256-cfb",
+	"bf-cfb",
 	"salsa20",
 	"chacha20",
 	"chacha20-ietf",
@@ -68,7 +69,8 @@ o.rmempty = false
 
 o = s:option(Value, "password", translate("Password"))
 o.password = true
-o.rmempty = false
+
+o = s:option(Value, "key", translate("Directly Key"))
 
 o = s:option(ListValue, "encrypt_method", translate("Encrypt Method"))
 for _, v in ipairs(encrypt_methods) do o:value(v, v:upper()) end
@@ -78,6 +80,6 @@ o = s:option(Value, "plugin", translate("Plugin Name"))
 o.placeholder = "eg: obfs-local"
 
 o = s:option(Value, "plugin_opts", translate("Plugin Arguments"))
-o.placeholder = "eg: obfs=http;obfs-host=www.baidu.com"
+o.placeholder = "eg: obfs=http;obfs-host=www.bing.com"
 
 return m

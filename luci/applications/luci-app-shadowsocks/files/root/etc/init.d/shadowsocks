@@ -72,13 +72,25 @@ get_plugin_config() {
 	fi
 }
 
+get_crypto_config() {
+	local key=$(uci_get_by_name $1 key)
+	local password=$(uci_get_by_name $1 password)
+	if [ -n "$key" ]; then
+		echo "\"key\": \"$key\","
+	elif [ -n "$password" ]; then
+		echo "\"password\": \"$password\","
+	else
+		logger -st $NAME -p3 "The password or key is not set."
+	fi
+}
+
 gen_config_file() {
 	cat <<-EOF >$CONFIG_FILE
 		{
 		    "server": "$(uci_get_by_name $1 server)",
 		    "server_port": $(uci_get_by_name $1 server_port),
 		    "local_address": "0.0.0.0",$(get_plugin_config $1)
-		    "password": "$(uci_get_by_name $1 password)",
+		    $(get_crypto_config $1)
 		    "timeout": $(uci_get_by_name $1 timeout 60),
 		    "method": "$(uci_get_by_name $1 encrypt_method)"
 		}
@@ -111,9 +123,16 @@ rules() {
 
 start_redir() {
 	gen_config_file $1
-	ss-redir -c $CONFIG_FILE $2 \
-		-l $(uci_get_by_type transparent_proxy local_port 1234) \
-		-f /var/run/ss-redir$3.pid
+	local processors=$(grep processor /proc/cpuinfo | wc -l)
+	local processes=$(uci_get_by_type transparent_proxy processes 1)
+	[ $processes -gt $processors ] && processes=$processors
+	[ $processes -gt 1 ] && reuse_port="--reuse-port"
+	for i in $(seq $processes); do
+		ss-redir -c $CONFIG_FILE $2 \
+			-l $(uci_get_by_type transparent_proxy local_port 1234) \
+			--mtu $(uci_get_by_type transparent_proxy mtu 1492) \
+			$reuse_port -f /var/run/ss-redir$3-$i.pid
+	done
 }
 
 ss_redir() {
@@ -134,9 +153,16 @@ ss_redir() {
 
 start_local() {
 	gen_config_file $1
-	ss-local -c $CONFIG_FILE -u $(get_arg_tfo $1) \
-		-l $(uci_get_by_type socks5_proxy local_port 1080) \
-		-f /var/run/ss-local.pid
+	local processors=$(grep processor /proc/cpuinfo | wc -l)
+	local processes=$(uci_get_by_type socks5_proxy processes 1)
+	[ $processes -gt $processors ] && processes=$processors
+	[ $processes -gt 1 ] && reuse_port="--reuse-port"
+	for i in $(seq $processes); do
+		ss-local -c $CONFIG_FILE -u $(get_arg_tfo $1) \
+			-l $(uci_get_by_type socks5_proxy local_port 1080) \
+			--mtu $(uci_get_by_type socks5_proxy mtu 1492) \
+			$reuse_port -f /var/run/ss-local-$i.pid
+	done
 }
 
 ss_local() {
@@ -147,10 +173,17 @@ ss_local() {
 
 start_tunnel() {
 	gen_config_file $1
-	ss-tunnel -c $CONFIG_FILE -u \
-		-l $(uci_get_by_type port_forward local_port 5300) \
-		-L $(uci_get_by_type port_forward destination 8.8.4.4:53) \
-		-f /var/run/ss-tunnel.pid
+	local processors=$(grep processor /proc/cpuinfo | wc -l)
+	local processes=$(uci_get_by_type port_forward processes 1)
+	[ $processes -gt $processors ] && processes=$processors
+	[ $processes -gt 1 ] && reuse_port="--reuse-port"
+	for i in $(seq $processes); do
+		ss-tunnel -c $CONFIG_FILE -u \
+			-l $(uci_get_by_type port_forward local_port 5300) \
+			-L $(uci_get_by_type port_forward destination 8.8.4.4:53) \
+			--mtu $(uci_get_by_type port_forward mtu 1492) \
+			$reuse_port -f /var/run/ss-tunnel-$i.pid
+	done
 }
 
 ss_tunnel() {

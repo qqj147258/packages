@@ -33,6 +33,12 @@ local function get_status(name)
 	return is_running(name) and translate("RUNNING") or translate("NOT RUNNING")
 end
 
+local function get_processors()
+	return tonumber(luci.sys.exec("grep processor /proc/cpuinfo | wc -l")) or 1
+end
+
+local processors = get_processors()
+
 uci:foreach(shadowsocks, "servers", function(s)
 	if s.server and s.server_port then
 		servers[#servers+1] = {name = s[".name"], alias = s.alias or "%s:%s" %{s.server, s.server_port}}
@@ -98,6 +104,18 @@ if has_redir then
 	o.datatype = "port"
 	o.default = 1234
 	o.rmempty = false
+
+	o = s:option(Value, "mtu", translate("Override MTU"))
+	o.default = 1492
+	o.datatype = "range(296,9200)"
+	o.rmempty = false
+
+	if processors > 1 then
+		o = s:option(ListValue, "processes", translate("Number of Processes"))
+		for i = 1, processors do o:value(i) end
+		o.default = 1
+		o.rmempty = false
+	end
 end
 
 -- [[ SOCKS5 Proxy ]]--
@@ -115,6 +133,18 @@ if has_local then
 	o.datatype = "port"
 	o.default = 1080
 	o.rmempty = false
+
+	o = s:option(Value, "mtu", translate("Override MTU"))
+	o.default = 1492
+	o.datatype = "range(296,9200)"
+	o.rmempty = false
+
+	if processors > 1 then
+		o = s:option(ListValue, "processes", translate("Number of Processes"))
+		for i = 1, processors do o:value(i) end
+		o.default = 1
+		o.rmempty = false
+	end
 end
 
 -- [[ Port Forward ]]--
@@ -136,6 +166,18 @@ if has_tunnel then
 	o = s:option(Value, "destination", translate("Destination"))
 	o.default = "8.8.4.4:53"
 	o.rmempty = false
+
+	o = s:option(Value, "mtu", translate("Override MTU"))
+	o.default = 1492
+	o.datatype = "range(296,9200)"
+	o.rmempty = false
+
+	if processors > 1 then
+		o = s:option(ListValue, "processes", translate("Number of Processes"))
+		for i = 1, processors do o:value(i) end
+		o.default = 1
+		o.rmempty = false
+	end
 end
 
 return m
