@@ -25,20 +25,6 @@ if not has_redir and not has_local and not has_tunnel then
 		translate("General Settings")}, '<b style="color:red">shadowsocks-libev binary file not found.</b>')
 end
 
-local function is_running(name)
-	return luci.sys.call("pidof %s >/dev/null" %{name}) == 0
-end
-
-local function get_status(name)
-	return is_running(name) and translate("RUNNING") or translate("NOT RUNNING")
-end
-
-local function get_processors()
-	return tonumber(luci.sys.exec("grep processor /proc/cpuinfo | wc -l")) or 1
-end
-
-local processors = get_processors()
-
 uci:foreach(shadowsocks, "servers", function(s)
 	if s.server and s.server_port then
 		servers[#servers+1] = {name = s[".name"], alias = s.alias or "%s:%s" %{s.server, s.server_port}}
@@ -46,24 +32,28 @@ uci:foreach(shadowsocks, "servers", function(s)
 end)
 
 m = Map(shadowsocks, "%s - %s" %{translate("ShadowSocks"), translate("General Settings")})
+m.template = "shadowsocks/general"
 
 -- [[ Running Status ]]--
 s = m:section(TypedSection, "general", translate("Running Status"))
 s.anonymous = true
 
 if has_redir then
-	o = s:option(DummyValue, "_status", translate("Transparent Proxy"))
-	o.value = get_status("ss-redir")
+	o = s:option(DummyValue, "_redir_status", translate("Transparent Proxy"))
+	o.value = "<span id=\"_redir_status\">%s</span>" %{translate("Collecting data...")}
+	o.rawhtml = true
 end
 
 if has_local then
-	o = s:option(DummyValue, "_status", translate("SOCKS5 Proxy"))
-	o.value = get_status("ss-local")
+	o = s:option(DummyValue, "_local_status", translate("SOCKS5 Proxy"))
+	o.value = "<span id=\"_local_status\">%s</span>" %{translate("Collecting data...")}
+	o.rawhtml = true
 end
 
 if has_tunnel then
-	o = s:option(DummyValue, "_status", translate("Port Forward"))
-	o.value = get_status("ss-tunnel")
+	o = s:option(DummyValue, "_tunnel_status", translate("Port Forward"))
+	o.value = "<span id=\"_tunnel_status\">%s</span>" %{translate("Collecting data...")}
+	o.rawhtml = true
 end
 
 s = m:section(TypedSection, "general", translate("Global Settings"))
@@ -83,10 +73,9 @@ if has_redir then
 	s = m:section(TypedSection, "transparent_proxy", translate("Transparent Proxy"))
 	s.anonymous = true
 
-	o = s:option(ListValue, "main_server", translate("Main Server"))
+	o = s:option(DynamicList, "main_server", translate("Main Server"))
 	o:value("nil", translate("Disable"))
 	for _, s in ipairs(servers) do o:value(s.name, s.alias) end
-	o.default = "nil"
 	o.rmempty = false
 
 	o = s:option(ListValue, "udp_relay_server", translate("UDP-Relay Server"))
@@ -109,13 +98,6 @@ if has_redir then
 	o.default = 1492
 	o.datatype = "range(296,9200)"
 	o.rmempty = false
-
-	if processors > 1 then
-		o = s:option(ListValue, "processes", translate("Number of Processes"))
-		for i = 1, processors do o:value(i) end
-		o.default = 1
-		o.rmempty = false
-	end
 end
 
 -- [[ SOCKS5 Proxy ]]--
@@ -123,10 +105,9 @@ if has_local then
 	s = m:section(TypedSection, "socks5_proxy", translate("SOCKS5 Proxy"))
 	s.anonymous = true
 
-	o = s:option(ListValue, "server", translate("Server"))
+	o = s:option(DynamicList, "server", translate("Server"))
 	o:value("nil", translate("Disable"))
 	for _, s in ipairs(servers) do o:value(s.name, s.alias) end
-	o.default = "nil"
 	o.rmempty = false
 
 	o = s:option(Value, "local_port", translate("Local Port"))
@@ -138,13 +119,6 @@ if has_local then
 	o.default = 1492
 	o.datatype = "range(296,9200)"
 	o.rmempty = false
-
-	if processors > 1 then
-		o = s:option(ListValue, "processes", translate("Number of Processes"))
-		for i = 1, processors do o:value(i) end
-		o.default = 1
-		o.rmempty = false
-	end
 end
 
 -- [[ Port Forward ]]--
@@ -152,10 +126,9 @@ if has_tunnel then
 	s = m:section(TypedSection, "port_forward", translate("Port Forward"))
 	s.anonymous = true
 
-	o = s:option(ListValue, "server", translate("Server"))
+	o = s:option(DynamicList, "server", translate("Server"))
 	o:value("nil", translate("Disable"))
 	for _, s in ipairs(servers) do o:value(s.name, s.alias) end
-	o.default = "nil"
 	o.rmempty = false
 
 	o = s:option(Value, "local_port", translate("Local Port"))
@@ -171,13 +144,6 @@ if has_tunnel then
 	o.default = 1492
 	o.datatype = "range(296,9200)"
 	o.rmempty = false
-
-	if processors > 1 then
-		o = s:option(ListValue, "processes", translate("Number of Processes"))
-		for i = 1, processors do o:value(i) end
-		o.default = 1
-		o.rmempty = false
-	end
 end
 
 return m
