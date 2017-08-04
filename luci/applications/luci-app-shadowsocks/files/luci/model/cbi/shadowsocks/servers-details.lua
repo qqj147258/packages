@@ -26,12 +26,10 @@ local encrypt_methods = {
 	"xchacha20-ietf-poly1305",
 }
 
-local function support_fast_open()
-	return luci.sys.exec("cat /proc/sys/net/ipv4/tcp_fastopen 2>/dev/null"):trim() == "3"
-end
-
 m = Map(shadowsocks, "%s - %s" %{translate("ShadowSocks"), translate("Edit Server")})
 m.redirect = luci.dispatcher.build_url("admin/services/shadowsocks/servers")
+m.sid = sid
+m.template = "shadowsocks/servers-details"
 
 if m.uci:get(shadowsocks, sid) ~= "servers" then
 	luci.http.redirect(m.redirect)
@@ -46,10 +44,8 @@ s.addremove = false
 o = s:option(Value, "alias", translate("Alias(optional)"))
 o.rmempty = true
 
-if support_fast_open() then
-	o = s:option(Flag, "fast_open", translate("TCP Fast Open"))
-	o.rmempty = false
-end
+o = s:option(Flag, "fast_open", translate("TCP Fast Open"))
+o.rmempty = false
 
 o = s:option(Value, "server", translate("Server Address"))
 o.datatype = "ipaddr"

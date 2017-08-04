@@ -88,11 +88,11 @@ s.template = "cbi/tblsection"
 s.addremove = true
 s.anonymous = true
 
-o = s:option(Value, "host", translate("Host"))
-luci.sys.net.arptable(function(x)
-	o:value(x["IP address"], "%s (%s)" %{x["IP address"], x["HW address"]})
+o = s:option(Value, "macaddr", translate("MAC-Address"))
+luci.sys.net.mac_hints(function(mac, name)
+	o:value(mac, "%s (%s)" %{mac, name})
 end)
-o.datatype = "ip4addr"
+o.datatype = "macaddr"
 o.rmempty = false
 
 o = s:option(ListValue, "type", translate("Proxy Type"))
